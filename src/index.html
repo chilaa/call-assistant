@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'">
+  <title>Call Clips</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <select id="topicSelect" data-t-label="topicOptions"></select>
+    <button id="topicMenuBtn" class="quiet" data-t="topicOptions"></button>
+    <label class="switch" data-t-title="cableSwitchHelp">
+      <input id="cableSwitch" type="checkbox" role="switch">
+      <span class="track"></span>
+      <span data-t="cableSwitch"></span>
+    </label>
+    <label class="switch" data-t-title="shortcutsHelp">
+      <input id="shortcutsSwitch" type="checkbox" role="switch">
+      <span class="track"></span>
+      <span data-t="shortcutsSwitch"></span>
+    </label>
+    <label class="switch" data-t-title="padHelp">
+      <input id="padSwitch" type="checkbox" role="switch">
+      <span class="track"></span>
+      <span data-t="padSwitch"></span>
+    </label>
+    <button id="checkBtn" class="quiet"></button>
+    <button id="settingsBtn" class="quiet" data-t="settings"></button>
+  </header>
+
+  <button id="banner" class="banner" hidden></button>
+  <button id="updateBanner" class="banner update" hidden></button>
+
+  <div class="work">
+    <main class="board-area">
+      <div class="toolbar">
+        <button id="recordBtn" class="record" data-t="recordNew"></button>
+        <button id="importBtn" class="quiet" data-t="addFile"></button>
+        <p class="soft hint" data-t="boardHint"></p>
+      </div>
+      <div id="boardScroll" class="board-scroll">
+        <div id="board" class="board">
+          <svg id="arrows" class="arrows" aria-hidden="true">
+            <defs>
+              <marker id="head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path class="arrow-head" d="M0 0 L10 5 L0 10 z"></path>
+              </marker>
+            </defs>
+            <g id="arrowLines"></g>
+          </svg>
+          <div id="emptyTopic" class="empty" hidden>
+            <p data-t="emptyTitle"></p>
+            <p class="soft" data-t="emptyText"></p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="side">
+      <h2 data-t="always"></h2>
+      <p class="soft" data-t="alwaysHint"></p>
+      <ul id="alwaysClips" class="side-clips"></ul>
+      <button id="recordAlwaysBtn" class="record ghost" data-t="recordNew"></button>
+    </aside>
+  </div>
+
+  <footer class="controls">
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+    <div class="control-row">
+      <button id="nextBtn" class="next">
+        <span class="big" id="nextLabel"></span>
+        <kbd id="nextKey"></kbd>
+      </button>
+      <button id="stopBtn" class="stop">
+        <span class="big" data-t="stop"></span>
+        <kbd id="stopKey"></kbd>
+      </button>
+      <div class="small-buttons">
+        <button id="repeatBtn" class="quiet"><span data-t="repeat"></span> <kbd id="repeatKey"></kbd></button>
+        <button id="newCallBtn" class="quiet"><span data-t="newCall"></span> <kbd id="newCallKey"></kbd></button>
+        <button id="clearDoneBtn" class="quiet" data-t="clearDone"></button>
+      </div>
+    </div>
+  </footer>
+
+  <dialog id="recordDialog" aria-labelledby="recordTitle">
+    <h2 id="recordTitle"></h2>
+    <label><span data-t="clipName"></span> <input id="recordName" maxlength="80"></label>
+    <div id="recordMeter" class="meter" hidden><span id="recordLevel"></span></div>
+    <p id="recordTime" class="timer" hidden>0:00</p>
+    <p id="recordHint" class="soft"></p>
+    <div class="dialog-buttons" id="recordButtons"></div>
+  </dialog>
+
+  <dialog id="clipDialog" aria-labelledby="clipTitle">
+    <h2 id="clipTitle"></h2>
+    <div class="stack">
+      <button id="clipListen" class="quiet" data-t="listenHeadset"></button>
+      <div>
+        <p class="field-name" data-t="buttonColor"></p>
+        <div id="swatches" class="swatches"></div>
+      </div>
+      <button id="clipTrim" class="quiet" data-t="trimEnds"></button>
+      <button id="clipKey" class="quiet"></button>
+      <button id="clipRename" class="quiet" data-t="rename"></button>
+      <button id="clipRerecord" class="quiet" data-t="recordAgain"></button>
+      <button id="clipUp" class="quiet" data-t="moveUp"></button>
+      <button id="clipDown" class="quiet" data-t="moveDown"></button>
+      <button id="clipDelete" class="quiet danger" data-t="deleteClip"></button>
+    </div>
+    <div class="dialog-buttons"><button id="clipClose" class="quiet" data-t="close"></button></div>
+  </dialog>
+
+  <dialog id="trimDialog" class="wide" aria-labelledby="trimTitle">
+    <h2 id="trimTitle" data-t="trimEnds"></h2>
+    <p class="soft" data-t="trimHint"></p>
+    <canvas id="trimWave" width="960" height="280"></canvas>
+    <label><span data-t="trimStart"></span> <input id="trimStart" type="range" step="0.01"></label>
+    <label><span data-t="trimEndLabel"></span> <input id="trimEnd" type="range" step="0.01"></label>
+    <p id="trimInfo" class="soft"></p>
+    <div class="dialog-buttons">
+      <button id="trimReset" class="quiet" data-t="resetTrim"></button>
+      <button id="trimListen" class="quiet" data-t="listen"></button>
+      <button id="trimCancel" class="quiet" data-t="cancel"></button>
+      <button id="trimSave" class="primary" data-t="saveTrim"></button>
+    </div>
+  </dialog>
+
+  <dialog id="keyDialog" aria-labelledby="keyTitle">
+    <h2 id="keyTitle"></h2>
+    <p class="soft" data-t="pressKeys"></p>
+    <p id="keyDialogError" class="error" hidden></p>
+    <div class="dialog-buttons">
+      <button id="keyClear" class="quiet danger" data-t="removeShortcut"></button>
+      <button id="keyCancel" class="quiet" data-t="cancel"></button>
+    </div>
+  </dialog>
+
+  <dialog id="topicDialog" aria-labelledby="topicTitle">
+    <h2 id="topicTitle" data-t="topicOptions"></h2>
+    <div class="stack">
+      <button id="topicNew" class="quiet" data-t="newTopic"></button>
+      <button id="topicRename" class="quiet" data-t="renameTopic"></button>
+      <button id="topicFolder" class="quiet" data-t="openTopicFolder"></button>
+      <button id="topicDelete" class="quiet danger" data-t="deleteTopic"></button>
+    </div>
+    <div class="dialog-buttons"><button id="topicClose" class="quiet" data-t="close"></button></div>
+  </dialog>
+
+  <dialog id="askDialog" aria-labelledby="askTitle">
+    <h2 id="askTitle"></h2>
+    <p id="askText" class="soft"></p>
+    <input id="askInput" maxlength="80" aria-labelledby="askTitle">
+    <div class="dialog-buttons">
+      <button id="askCancel" class="quiet" data-t="cancel"></button>
+      <button id="askOk" class="primary"></button>
+    </div>
+  </dialog>
+
+  <dialog id="checkDialog" class="wide" aria-labelledby="checkTitle">
+    <h2 id="checkTitle" data-t="checkTitle"></h2>
+    <p class="soft" data-t="checkIntro"></p>
+    <ul id="checkList" class="check-list"></ul>
+    <p id="checkPrompt" class="check-prompt" hidden></p>
+    <div id="checkMeter" class="meter" hidden><span id="checkLevel"></span></div>
+    <p id="checkSummary" class="check-summary" hidden></p>
+    <div class="dialog-buttons">
+      <button id="checkCable" class="quiet" data-t="downloadCable" hidden></button>
+      <button id="checkSound" class="quiet" data-t="openSound"></button>
+      <button id="checkClose" class="quiet" data-t="close"></button>
+      <button id="checkRun" class="primary"></button>
+    </div>
+  </dialog>
+
+  <dialog id="settingsDialog" class="wide" aria-labelledby="settingsTitle">
+    <h2 id="settingsTitle" data-t="settings"></h2>
+    <div class="two">
+      <label><span data-t="language"></span>
+        <select id="langSelect"><option value="en">English</option><option value="ka">ქართული</option></select>
+      </label>
+      <label><span data-t="theme"></span>
+        <select id="themeSelect">
+          <option value="light" data-t="themeLight"></option>
+          <option value="dark" data-t="themeDark"></option>
+        </select>
+      </label>
+    </div>
+
+    <h3 data-t="soundDevices"></h3>
+    <p id="speakerNote" class="soft note" data-t="speakerNote"></p>
+    <label id="callRow"><span data-t="callSound"></span> <select id="callSelect"></select></label>
+    <label id="speakerRow"><span data-t="speakerOut"></span> <select id="speakerSelect"></select></label>
+    <p id="sameDevice" class="error" data-t="sameDevice" hidden></p>
+    <label><span data-t="microphone"></span> <select id="micSelect"></select></label>
+    <div class="meter"><span id="micLevel"></span></div>
+    <label><span data-t="headset"></span> <select id="headsetSelect"></select></label>
+    <label><span data-t="clipVolume"></span> <span id="volumeValue" class="soft"></span> <input id="volume" type="range" min="0.25" max="2" step="0.05"></label>
+    <p class="soft note" data-t="clipVolumeHelp"></p>
+    <label class="check" id="mixRow"><input id="mixMic" type="checkbox"> <span data-t="mixMic"></span></label>
+    <p id="mixHelp" class="soft note" data-t="mixMicHelp"></p>
+    <label class="check" id="muteRow"><input id="muteMic" type="checkbox"> <span data-t="muteMic"></span></label>
+    <label class="check"><input id="onTop" type="checkbox"> <span data-t="onTop"></span></label>
+    <label class="check"><input id="skipQuiet" type="checkbox"> <span data-t="skipQuiet"></span></label>
+
+    <h3 data-t="keys"></h3>
+    <label><span data-t="mainKey"></span>
+      <select id="clipModifier">
+        <option value="Control">Ctrl</option>
+        <option value="Alt">Alt</option>
+        <option value="Shift">Shift</option>
+        <option value="Control+Alt">Ctrl + Alt</option>
+        <option value="Control+Shift">Ctrl + Shift</option>
+        <option value="Alt+Shift">Alt + Shift</option>
+      </select>
+    </label>
+    <p id="modifierHint" class="soft note"></p>
+    <div id="keyRows" class="key-rows"></div>
+    <p id="keyError" class="error" hidden></p>
+
+    <p id="shortcutNote" class="soft note" hidden></p>
+    <h3 id="versionLine"></h3>
+    <label class="check"><input id="autoUpdate" type="checkbox"> <span data-t="autoUpdate"></span></label>
+    <p class="soft note" data-t="autoUpdateHelp"></p>
+    <p id="updateNote" class="soft note" hidden></p>
+    <div class="dialog-buttons">
+      <button id="checkUpdatesBtn" class="quiet" data-t="checkUpdates"></button>
+      <button id="restartBtn" class="primary" data-t="restartNow" hidden></button>
+    </div>
+    <div class="dialog-buttons">
+      <button id="addShortcutsBtn" class="quiet" data-t="addShortcuts"></button>
+      <button id="openDataFolder" class="quiet" data-t="openClips"></button>
+      <button id="settingsClose" class="primary" data-t="done"></button>
+    </div>
+  </dialog>
+
+  <script src="i18n.js"></script>
+  <script src="audio-utils.js"></script>
+  <script src="board.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

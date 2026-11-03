@@ -1,0 +1,20 @@
+{
+  "name": "call-clips",
+  "productName": "Call Clips",
+  "version": "1.6.0",
+  "description": "Record your interview questions once and play them into calls.",
+  "repository": "https://github.com/chilaa/call-assistant",
+  "main": "src/loader.js",
+  "author": "Call Clips",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/logic.test.js",
+    "build:win": "electron-packager . \"Call Clips\" --platform=win32 --arch=x64 --out=dist --overwrite --icon=assets/icon.ico --extra-resource=assets/icon.ico --ignore=^/dist --ignore=^/test --ignore=^/shots",
+    "release": "node scripts/make-update.js"
+  },
+  "devDependencies": {
+    "@electron/packager": "20.3.0",
+    "electron": "45.2.1"
+  }
+}

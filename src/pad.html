@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'">
+  <title>Call Clips pad</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="pad.css">
+</head>
+<body class="pad">
+  <header class="pad-top">
+    <label class="check"><input id="onTop" type="checkbox"> <span id="onTopLabel"></span></label>
+  </header>
+  <main id="list" class="pad-list"></main>
+  <footer class="pad-foot">
+    <button id="nextBtn" class="pad-next"></button>
+    <button id="stopBtn" class="pad-stop"></button>
+  </footer>
+  <script src="pad.js"></script>
+</body>
+</html>

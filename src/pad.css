@@ -1,0 +1,51 @@
+body.pad { font-size: 14px; }
+.pad-top { display: flex; align-items: center; padding: 6px 10px; background: var(--sheet); border-bottom: 1px solid var(--line); }
+.pad-top .check { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; cursor: pointer; }
+.pad-list { flex: 1; min-height: 0; overflow-y: auto; padding: 6px; }
+.pad-row {
+  --tile: var(--sheet);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 38px;
+  margin-bottom: 4px;
+  padding: 4px 8px 4px 6px;
+  overflow: hidden;
+  color: var(--ink);
+  text-align: left;
+  background: var(--tile);
+  border: 2px solid var(--line);
+  border-radius: 8px;
+}
+.pad-row.colored { color: #fff; border-color: transparent; }
+.pad-row.is-next { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.pad-row.playing { --tile: var(--cobalt); color: #fff; }
+.pad-row.colored.playing { --tile: var(--clip-color); }
+.pad-row .fill { position: absolute; inset: 0 auto 0 0; width: var(--progress, 0%); background: rgba(255, 255, 255, .24); pointer-events: none; }
+.pad-row .num {
+  position: relative;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--paper);
+  border-radius: 50%;
+}
+.pad-row.played .num { color: #fff; background: var(--done); }
+.pad-row .name { position: relative; flex: 1; min-width: 0; overflow: hidden; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
+.pad-row kbd { position: relative; flex: none; font-size: 11px; opacity: .85; }
+.pad-side { margin: 8px 0 4px; padding-top: 6px; font-size: 12px; color: var(--soft); border-top: 1px solid var(--line); }
+.pad-foot { display: grid; grid-template-columns: 1fr 70px; gap: 6px; padding: 6px; background: var(--sheet); border-top: 1px solid var(--line); }
+.pad-next, .pad-stop { min-height: 40px; padding: 0 8px; overflow: hidden; font-weight: 700; color: #fff; white-space: nowrap; }
+.pad-next { background: var(--cobalt); }
+.pad-next:disabled { opacity: 1; color: var(--soft); background: var(--paper); }
+.pad-stop { background: #17213A; }
+:root[data-theme="dark"] .pad-stop { background: #4A5468; }
+.pad-empty { padding: 20px 8px; text-align: center; color: var(--soft); }
+@media (max-width: 230px) { .pad-row kbd { display: none; } }
