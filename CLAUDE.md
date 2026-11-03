@@ -12,16 +12,18 @@ full picture. Keep the language in the app and in replies simple.
 - `node test/e2e3.js` etc. — run the real app with a fake mic
   (on Linux prefix with `xvfb-run -a`). Needs Playwright; optional.
 - `npm run release -- "What changed"` — builds, writes
-  `updates/app-<version>.asar` + `updates/latest.json`, and
-  `dist/Call-Clips-Windows.zip`.
+  `updates/app-<version>.asar` + `updates/latest.json` and
+  `dist/Call-Clips-Windows.zip`, then commits, pushes to `main` and uploads
+  the zip as a GitHub Release (`gh`). `--no-push` only builds.
 
 ## Releasing an update
 
 1. Raise `"version"` in `package.json` (the app only installs higher numbers).
-2. `npm run release -- "What changed"`.
-3. `git add -A && git commit -m "Release <version>" && git push`.
-   The laptops read `updates/latest.json` from the `main` branch on
+2. `npm run release -- "What changed"` (commits and pushes for you).
+3. The laptops read `updates/latest.json` from the `main` branch on
    raw.githubusercontent.com and update themselves within minutes.
+   New laptops download the zip from
+   `https://github.com/chilaa/call-assistant/releases/latest/download/Call-Clips-Windows.zip`.
 4. Never edit `updates/latest.json` by hand; the sha256 must match the file.
 
 ## Rules that matter

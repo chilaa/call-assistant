@@ -962,6 +962,7 @@ function renderSwatches(item) {
 
 function openClipDialog(item) {
   const dialog = $('clipDialog');
+  players.clip.hide();
   const { topicId, clip } = item;
   const onSide = topicId === state.alwaysId;
   const list = listFor(topicId);
@@ -1021,28 +1022,132 @@ function openClipDialog(item) {
 }
 
 // Plays in the headset only, so the call never hears this.
-let preview = null;
+// A player is a progress bar (like a music player) that shows one part of a
+// buffer: how long it is and how much has played. Clicking the bar jumps there.
+let preview = null; // { source, player, from, startedAt }
+let previewFrame = 0;
+
+function makePlayer(id, { button, idleText, onTick } = {}) {
+  const el = $(id);
+  const part = (name) => el.querySelector(`[data-part="${name}"]`);
+  const player = { el, button, idleText, onTick, buffer: null, start: 0, length: 0 };
+
+  // Where playback is, in seconds from the start of the shown part, or null.
+  player.position = () => {
+    if (!preview || preview.player !== player) return null;
+    // outputLatency: the sound reaches the ears a little after it is sent.
+    const played = audio.headCtx.currentTime - preview.startedAt - (audio.headCtx.outputLatency || 0);
+    const at = preview.from + played - player.start;
+    return Math.min(player.length, Math.max(0, at));
+  };
+  player.show = () => {
+    const at = player.position();
+    const playing = at !== null;
+    part('fill').style.width = `${player.length ? ((at || 0) / player.length) * 100 : 0}%`;
+    part('now').textContent = formatTime(at || 0);
+    part('total').textContent = formatTime(player.length);
+    part('bar').setAttribute('aria-valuenow', String(Math.round(at || 0)));
+    part('bar').setAttribute('aria-valuemax', String(Math.round(player.length)));
+    const btn = typeof player.button === 'function' ? player.button() : player.button;
+    if (btn && player.idleText) btn.textContent = playing ? t('stop') : t(player.idleText);
+    if (player.onTick) player.onTick();
+  };
+  player.set = (buffer, start, length) => {
+    if (preview && preview.player === player) stopPreview();
+    Object.assign(player, { buffer, start, length });
+    el.hidden = false;
+    player.show();
+  };
+  player.hide = () => {
+    if (preview && preview.player === player) stopPreview();
+    el.hidden = true;
+  };
+  player.play = (offset = 0) => {
+    if (!player.buffer) return;
+    const from = Math.min(Math.max(0, offset), Math.max(0, player.length - 0.05));
+    playPreview(player.buffer, player.start + from, player.length - from, player);
+  };
+  player.toggle = () => {
+    if (player.position() !== null) stopPreview();
+    else player.play(0);
+  };
+
+  const bar = part('bar');
+  const seek = (e) => {
+    const box = bar.getBoundingClientRect();
+    player.play(((e.clientX - box.left) / box.width) * player.length);
+  };
+  let seeking = false;
+  bar.addEventListener('pointerdown', (e) => {
+    seeking = true;
+    bar.setPointerCapture(e.pointerId);
+    seek(e);
+  });
+  bar.addEventListener('pointermove', (e) => { if (seeking) seek(e); });
+  bar.addEventListener('pointerup', () => { seeking = false; });
+  bar.addEventListener('keydown', (e) => {
+    const at = player.position() || 0;
+    if (e.key === 'ArrowRight') player.play(at + 2);
+    else if (e.key === 'ArrowLeft') player.play(at - 2);
+    else if (e.key === ' ' || e.key === 'Enter') player.toggle();
+    else return;
+    e.preventDefault();
+  });
+  return player;
+}
+
+function tickPreview() {
+  previewFrame = 0;
+  if (!preview) return;
+  preview.player.show();
+  previewFrame = requestAnimationFrame(tickPreview);
+}
+
 function stopPreview() {
   if (!preview) return;
-  preview.onended = null;
-  preview.stop();
+  const { source, player } = preview;
   preview = null;
+  source.onended = null;
+  try { source.stop(); } catch { /* already stopped */ }
+  if (player) player.show();
 }
-function playPreview(buffer, volume, from = 0, seconds = buffer.duration) {
+
+function playPreview(buffer, from = 0, seconds = buffer.duration, player = null) {
   stopPreview();
   const source = audio.headCtx.createBufferSource();
   source.buffer = buffer;
   source.connect(audio.headsetBus);
-  source.onended = () => { if (preview === source) preview = null; };
-  preview = source;
+  source.onended = () => {
+    if (!preview || preview.source !== source) return;
+    preview = null;
+    if (player) player.show();
+  };
   audio.headCtx.resume();
+  preview = { source, player, from, startedAt: audio.headCtx.currentTime };
   source.start(0, from, seconds);
+  if (player && !previewFrame) previewFrame = requestAnimationFrame(tickPreview);
 }
+
+const players = {};
+function connectPlayers() {
+  players.clip = makePlayer('clipPlayer', { button: $('clipListen'), idleText: 'listenHeadset' });
+  players.record = makePlayer('recordPlayer', {
+    button: () => $('recordButtons').querySelector('[data-role="listen"]'),
+    idleText: 'listen',
+  });
+  players.trim = makePlayer('trimPlayer', { button: $('trimListen'), idleText: 'listen', onTick: () => drawTrim() });
+}
+
 async function listen(topicId, clip) {
+  if (players.clip.position() !== null) {
+    stopPreview();
+    return;
+  }
   try {
     const buffer = await bufferFor(topicId, clip);
     const range = effectiveRange(clip, buffer);
-    playPreview(buffer, state.settings.volume, range.start, range.length);
+    players.clip.set(buffer, range.start, range.length);
+    players.clip.play(0);
   } catch {
     showStatus(t('cannotPlayClip', { name: clip.name }), 'problem');
   }
@@ -1079,25 +1184,38 @@ function drawTrim() {
   g.clearRect(0, 0, width, height);
   g.fillStyle = '#17213A';
   g.fillRect(0, 0, width, height);
+  // Where playback is now, so the yellow line follows the sound.
+  const at = players.trim ? players.trim.position() : null;
+  const playX = at === null ? null : ((players.trim.start + at) / duration) * width;
   trim.peaks.forEach((peak, x) => {
     const bar = Math.max(2, peak * height * 0.86);
-    g.fillStyle = x >= startX && x <= endX ? '#7F9BFF' : '#3A4560';
+    const kept = x >= startX && x <= endX;
+    g.fillStyle = !kept ? '#3A4560' : playX !== null && x <= playX ? '#C9D5FF' : '#7F9BFF';
     g.fillRect(x, (height - bar) / 2, 1, bar);
   });
   g.fillStyle = '#FFFFFF';
   g.fillRect(startX - 3, 0, 6, height);
   g.fillRect(endX - 3, 0, 6, height);
+  if (playX !== null) {
+    g.fillStyle = '#FFD24A';
+    g.fillRect(playX - 1.5, 0, 3, height);
+  }
   $('trimStart').value = trim.start;
   $('trimEnd').value = trim.end;
   $('trimInfo').textContent = t('keeps', { part: formatTime(trim.end - trim.start), all: formatTime(duration) });
+}
+
+// The progress bar under the wave covers only the part that will play.
+function trimRangeChanged() {
+  players.trim.set(trim.buffer, trim.start, trim.end - trim.start);
+  drawTrim();
 }
 
 function moveTrim(which, seconds) {
   const { duration } = trim.buffer;
   if (which === 'start') trim.start = Math.min(Math.max(0, seconds), trim.end - MIN_KEEP);
   else trim.end = Math.max(Math.min(duration, seconds), trim.start + MIN_KEEP);
-  stopPreview();
-  drawTrim();
+  trimRangeChanged();
 }
 
 // Resolves with { start, end }, or null if cancelled.
@@ -1109,7 +1227,7 @@ function openTrim(buffer, range) {
   for (const id of ['trimStart', 'trimEnd']) $(id).max = buffer.duration;
   $('trimSave').disabled = buffer.duration <= MIN_KEEP;
   $('trimDialog').showModal();
-  drawTrim();
+  trimRangeChanged();
   return new Promise((resolve) => { trim.finish = resolve; });
 }
 
@@ -1157,12 +1275,9 @@ function connectTrimEvents() {
   $('trimReset').addEventListener('click', () => {
     trim.start = 0;
     trim.end = trim.buffer.duration;
-    stopPreview();
-    drawTrim();
+    trimRangeChanged();
   });
-  $('trimListen').addEventListener('click', () => {
-    playPreview(trim.buffer, state.settings.volume, trim.start, trim.end - trim.start);
-  });
+  $('trimListen').addEventListener('click', () => players.trim.toggle());
   $('trimCancel').addEventListener('click', () => closeTrim(null));
   $('trimDialog').addEventListener('cancel', (e) => { e.preventDefault(); closeTrim(null); });
   $('trimSave').addEventListener('click', () => closeTrim({ start: trim.start, end: trim.end }));
@@ -1179,12 +1294,14 @@ function recordButtons(buttons) {
     const el = document.createElement('button');
     el.className = button.className || 'quiet';
     el.textContent = button.text;
+    if (button.role) el.dataset.role = button.role;
     el.addEventListener('click', button.action);
     box.append(el);
   }
 }
 
 function showRecorderStart(hint) {
+  players.record.hide();
   $('recordMeter').hidden = false;
   $('recordTime').hidden = true;
   $('recordHint').textContent = hint || t('recordHint');
@@ -1273,14 +1390,12 @@ function showRecorderReview() {
   $('recordTime').textContent = formatTime(end - start);
   $('recordHint').textContent = peakOf(recorder.samples) < 0.005 ? t('quietWarning') : t('reviewHint');
   recordButtons([
-    {
-      text: t('listen'),
-      action: () => playPreview(recorder.buffer, state.settings.volume, start, end - start),
-    },
+    { text: t('listen'), role: 'listen', action: () => players.record.toggle() },
     { text: t('trim'), action: trimRecording },
     { text: t('recordAgain'), action: () => { stopPreview(); showRecorderStart(); } },
     { text: t('saveClip'), className: 'primary', action: saveRecording },
   ]);
+  players.record.set(recorder.buffer, start, end - start);
 }
 
 async function trimRecording() {
@@ -1634,7 +1749,31 @@ function showVolume() {
 
 /* ---------- Connecting the page ---------- */
 
+// Small windows close when you click outside them, the same as pressing Esc.
+// Recording and trimming are left out so unsaved work is not lost by a stray click.
+function closeOnOutsideClick(dialog) {
+  const outside = (e) => {
+    const box = dialog.getBoundingClientRect();
+    return e.clientX < box.left || e.clientX > box.right || e.clientY < box.top || e.clientY > box.bottom;
+  };
+  // Both the press and the release must be outside, so dragging a slider
+  // and letting go outside the window does not close it.
+  let pressedOutside = false;
+  dialog.addEventListener('pointerdown', (e) => { pressedOutside = e.target === dialog && outside(e); });
+  dialog.addEventListener('click', (e) => {
+    const wasOutside = pressedOutside;
+    pressedOutside = false;
+    if (!wasOutside || e.target !== dialog || !outside(e)) return;
+    if (dialog.dispatchEvent(new Event('cancel', { cancelable: true }))) dialog.close();
+  });
+}
+
 function connectEvents() {
+  for (const id of ['clipDialog', 'topicDialog', 'askDialog', 'keyDialog', 'checkDialog', 'settingsDialog']) {
+    closeOnOutsideClick($(id));
+  }
+  $('clipDialog').addEventListener('close', stopPreview);
+
   $('nextBtn').addEventListener('click', playNext);
   $('stopBtn').addEventListener('click', stopClip);
   $('repeatBtn').addEventListener('click', repeat);
@@ -1779,6 +1918,7 @@ async function start() {
   applyWords();
   if (loaded.updateReady) showUpdate(loaded.updateReady);
   setUpSound();
+  connectPlayers();
   connectEvents();
   connectTrimEvents();
 

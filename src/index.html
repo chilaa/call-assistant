@@ -90,6 +90,11 @@
     <div id="recordMeter" class="meter" hidden><span id="recordLevel"></span></div>
     <p id="recordTime" class="timer" hidden>0:00</p>
     <p id="recordHint" class="soft"></p>
+    <div id="recordPlayer" class="player" hidden>
+      <span class="player-time" data-part="now">0:00</span>
+      <div class="player-bar" data-part="bar" role="slider" tabindex="0" data-t-label="playPosition"><span data-part="fill"></span></div>
+      <span class="player-time" data-part="total">0:00</span>
+    </div>
     <div class="dialog-buttons" id="recordButtons"></div>
   </dialog>
 
@@ -97,6 +102,11 @@
     <h2 id="clipTitle"></h2>
     <div class="stack">
       <button id="clipListen" class="quiet" data-t="listenHeadset"></button>
+      <div id="clipPlayer" class="player" hidden>
+        <span class="player-time" data-part="now">0:00</span>
+        <div class="player-bar" data-part="bar" role="slider" tabindex="0" data-t-label="playPosition"><span data-part="fill"></span></div>
+        <span class="player-time" data-part="total">0:00</span>
+      </div>
       <div>
         <p class="field-name" data-t="buttonColor"></p>
         <div id="swatches" class="swatches"></div>
@@ -116,6 +126,11 @@
     <h2 id="trimTitle" data-t="trimEnds"></h2>
     <p class="soft" data-t="trimHint"></p>
     <canvas id="trimWave" width="960" height="280"></canvas>
+    <div id="trimPlayer" class="player" hidden>
+      <span class="player-time" data-part="now">0:00</span>
+      <div class="player-bar" data-part="bar" role="slider" tabindex="0" data-t-label="playPosition"><span data-part="fill"></span></div>
+      <span class="player-time" data-part="total">0:00</span>
+    </div>
     <label><span data-t="trimStart"></span> <input id="trimStart" type="range" step="0.01"></label>
     <label><span data-t="trimEndLabel"></span> <input id="trimEnd" type="range" step="0.01"></label>
     <p id="trimInfo" class="soft"></p>

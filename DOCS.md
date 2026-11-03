@@ -98,27 +98,32 @@ You need Node.js 20 or newer on any computer, and Git or just a browser.
 3. Make your change in `src/`.
 4. Open `package.json` and raise `"version"`, for example `1.6.0` → `1.6.1`.
    The app only installs versions that are higher than the one it runs.
-5. Run `npm run release -- "What changed"`. This runs the checks, builds the
-   app, and writes two files:
-   `updates/app-<version>.asar` and `updates/latest.json`.
-   It also makes `dist/Call-Clips-Windows.zip` for fresh installs.
-6. Put the two files into the `updates/` folder of the repository, on the
-   `main` branch. Either
-   - `git add -A && git commit -m "Release <version>" && git push`, or
-   - on github.com open the `updates` folder, choose *Add file → Upload
-     files*, drop both files, and commit. This works from a phone.
-7. Within a few minutes every laptop running the app will download it and
-   offer a restart. (raw.githubusercontent.com caches files for up to about
-   5 minutes.)
+5. Run `npm run release -- "What changed"`. This does everything:
+   - runs the checks and builds the app,
+   - writes `updates/app-<version>.asar` and `updates/latest.json`,
+   - makes `dist/Call-Clips-Windows.zip` (the full app, for new laptops),
+   - commits and pushes to `main` — this is the moment every laptop gets it,
+   - uploads the zip to a GitHub Release (needs `gh auth login` once).
+   It stops if the version was not raised, or if you are not on `main`.
+   Use `npm run release -- --no-push "What changed"` to only build.
+6. Within a few hours every running laptop downloads the update and offers a
+   restart (it checks on start and every 4 hours).
+
+New laptops download the full app here, always the newest version:
+https://github.com/chilaa/call-assistant/releases/latest/download/Call-Clips-Windows.zip
+The zip is never put in git itself; it is too big (GitHub refuses files over
+100 MB, and every copy would stay in the history forever).
+
+Without the `gh` tool you can push by hand and upload the zip on
+github.com → Releases → *Draft a new release*.
 
 Only put files there that were built from this code. `latest.json` must
 contain the exact SHA-256 of the `.asar`, or the app will refuse it.
 
 ### If the Electron runtime must change
 
-Rare (new Electron version, new icon in the .exe). Build with
-`npm run release`, and install `dist/Call-Clips-Windows.zip` on the laptop by
-hand. Clips and settings stay, because they live in `Documents\Call Clips`.
+Rare (new Electron version, new icon in the .exe). Release as usual, then on
+each laptop install the new zip from the download link above by hand. Clips and settings stay, because they live in `Documents\Call Clips`.
 
 ### Build details
 

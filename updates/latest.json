@@ -1,7 +1,7 @@
 {
-  "version": "1.6.0",
-  "file": "app-1.6.0.asar",
-  "sha256": "5e304bc5294667607e1edc66353b438d3b44b974c7738bf17e73f81a45c37f23",
-  "notes": "First release with automatic updates",
+  "version": "1.7.0",
+  "file": "app-1.7.0.asar",
+  "sha256": "1aef6b92f908f592189d575da8fc5b8eea919dbb099ca46deab35327715471e1",
+  "notes": "Progress bar when listening, playing line on the trim wave, small windows close when you click outside",
   "date": "2026-11-03"
 }
