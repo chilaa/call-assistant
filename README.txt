@@ -8,3 +8,7 @@ Call Clips
    on the taskbar and choose "Pin to taskbar".
 
 Clips are saved in Documents\Call Clips.
+
+The app updates itself. To install it on another laptop, download the
+newest version here:
+https://github.com/chilaa/call-assistant/releases/latest/download/Call-Clips-Windows.zip
