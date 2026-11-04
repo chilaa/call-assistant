@@ -1,7 +1,7 @@
 {
   "name": "call-clips",
   "productName": "Call Clips",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Record your interview questions once and play them into calls.",
   "repository": "https://github.com/chilaa/call-assistant",
   "main": "src/loader.js",

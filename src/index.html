@@ -57,7 +57,10 @@
       </div>
     </main>
 
-    <aside class="side">
+    <button id="sideToggle" class="side-toggle" aria-controls="sidePanel" aria-expanded="false">
+      <span class="side-arrow" aria-hidden="true"></span><span data-t="always"></span>
+    </button>
+    <aside id="sidePanel" class="side" hidden>
       <h2 data-t="always"></h2>
       <p class="soft" data-t="alwaysHint"></p>
       <ul id="alwaysClips" class="side-clips"></ul>
@@ -100,6 +103,9 @@
 
   <dialog id="clipDialog" aria-labelledby="clipTitle">
     <h2 id="clipTitle"></h2>
+    <label class="note-field"><span data-t="clipNote"></span>
+      <textarea id="clipNote" rows="2" maxlength="200"></textarea>
+    </label>
     <div class="stack">
       <button id="clipListen" class="quiet" data-t="listenHeadset"></button>
       <div id="clipPlayer" class="player" hidden>

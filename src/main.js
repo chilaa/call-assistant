@@ -14,7 +14,7 @@ app.commandLine.appendSwitch('disable-background-timer-throttling');
 
 const DEFAULT_SETTINGS = {
   mode: 'cable', micId: '', headsetId: '', callId: '', speakerId: '',
-  lang: 'en', theme: 'light', checkedKey: '', shortcutsOn: true, skipQuietStart: true, mixMic: false, autoUpdate: true,
+  lang: 'en', theme: 'light', checkedKey: '', shortcutsOn: true, skipQuietStart: true, mixMic: false, autoUpdate: true, sideOpen: false,
   pad: { open: false, onTop: true, width: 260, height: 420, x: undefined, y: undefined }, clipModifier: 'Control', volume: 1, muteMicDuringClip: true, onTop: false, lastTopic: '',
   keys: {
     next: 'Control+Space',
@@ -189,6 +189,14 @@ function addShortcuts() {
 
 function setUpIpc() {
   const handle = (name, fn) => ipcMain.handle(name, (_event, ...args) => fn(...args));
+  // Changes to a topic read topic.json, change it and write it back. Doing them
+  // one at a time means two quick changes can never overwrite each other.
+  let writes = Promise.resolve();
+  const inOrder = (fn) => (...args) => {
+    const next = writes.then(() => fn(...args));
+    writes = next.catch(() => {});
+    return next;
+  };
 
   handle('load', async () => {
     const topics = await store.listTopics();
@@ -283,13 +291,13 @@ function setUpIpc() {
     return clips;
   });
   handle('readClip', async (topicId, clipId) => new Uint8Array(await store.readClip(topicId, clipId)));
-  handle('updateClip', (topicId, clipId, change) => store.updateClip(topicId, clipId, change));
-  handle('setOrder', (topicId, ids) => store.setOrder(topicId, ids));
-  handle('saveLayout', (topicId, items) => store.saveLayout(topicId, items));
+  handle('updateClip', inOrder((topicId, clipId, change) => store.updateClip(topicId, clipId, change)));
+  handle('setOrder', inOrder((topicId, ids) => store.setOrder(topicId, ids)));
+  handle('saveLayout', inOrder((topicId, items) => store.saveLayout(topicId, items)));
   handle('deleteClip', async (topicId, clipId) => {
     await shell.trashItem(await store.removeClip(topicId, clipId)).catch(() => {});
   });
-  handle('moveClip', (topicId, clipId, step) => store.moveClip(topicId, clipId, step));
+  handle('moveClip', inOrder((topicId, clipId, step) => store.moveClip(topicId, clipId, step)));
 }
 
 if (!app.requestSingleInstanceLock()) {

@@ -412,7 +412,16 @@ function clipTile(item, position, nextSet) {
     key.textContent = showKey(shortcut);
     meta.append(key);
   }
-  play.append(num, name, meta);
+  play.append(num, name);
+  if (clip.note) {
+    li.classList.add('has-note');
+    const note = document.createElement('span');
+    note.className = 'note';
+    note.textContent = clip.note;
+    play.append(note);
+    play.title = `${clip.name}\n${clip.note}`;
+  }
+  play.append(meta);
 
   const more = document.createElement('button');
   more.className = 'more';
@@ -587,6 +596,7 @@ function applyWords() {
   document.querySelectorAll('[data-t-title]').forEach((el) => { el.title = t(el.dataset.tTitle); });
   document.querySelectorAll('[data-t-label]').forEach((el) => { el.setAttribute('aria-label', t(el.dataset.tLabel)); });
   $('checkRun').textContent = t('runCheck');
+  if (state.settings) renderSide();
   fitTexts();
 }
 
@@ -629,6 +639,14 @@ window.addEventListener('resize', () => {
   clearTimeout(fitTimer);
   fitTimer = setTimeout(fitTexts, 80);
 });
+
+// The "Always use" panel is folded away unless she opens it with the tab.
+function renderSide() {
+  const open = Boolean(state.settings.sideOpen);
+  $('sidePanel').hidden = !open;
+  $('sideToggle').setAttribute('aria-expanded', String(open));
+  $('sideToggle').title = t(open ? 'hideAlways' : 'showAlways');
+}
 
 function showUpdate(info) {
   state.update = info;
@@ -963,6 +981,9 @@ function renderSwatches(item) {
 function openClipDialog(item) {
   const dialog = $('clipDialog');
   players.clip.hide();
+  noteTarget = { topicId: item.topicId, clip: item.clip };
+  $('clipNote').value = item.clip.note || '';
+  $('clipNote').placeholder = t('clipNoteHint');
   const { topicId, clip } = item;
   const onSide = topicId === state.alwaysId;
   const list = listFor(topicId);
@@ -1019,6 +1040,19 @@ function openClipDialog(item) {
     await reloadTopics();
   };
   dialog.showModal();
+}
+
+// The description is saved when the options window closes, whichever way.
+let noteTarget = null;
+async function saveNote() {
+  if (!noteTarget) return;
+  const { topicId, clip } = noteTarget;
+  noteTarget = null;
+  const note = $('clipNote').value.trim();
+  if (note === (clip.note || '')) return;
+  clip.note = note;
+  await api.updateClip(topicId, clip.id, { note });
+  await reloadTopics();
 }
 
 // Plays in the headset only, so the call never hears this.
@@ -1772,7 +1806,10 @@ function connectEvents() {
   for (const id of ['clipDialog', 'topicDialog', 'askDialog', 'keyDialog', 'checkDialog', 'settingsDialog']) {
     closeOnOutsideClick($(id));
   }
-  $('clipDialog').addEventListener('close', stopPreview);
+  $('clipDialog').addEventListener('close', () => { stopPreview(); saveNote(); });
+  $('clipNote').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('clipDialog').close(); }
+  });
 
   $('nextBtn').addEventListener('click', playNext);
   $('stopBtn').addEventListener('click', stopClip);
@@ -1781,6 +1818,12 @@ function connectEvents() {
   $('clearDoneBtn').addEventListener('click', clearDone);
 
   $('recordBtn').addEventListener('click', () => openRecorder({ topicId: state.topic.id }));
+  $('sideToggle').addEventListener('click', async () => {
+    await changeSetting({ sideOpen: !state.settings.sideOpen });
+    renderSide();
+    sizeBoard();
+    fitTexts();
+  });
   $('recordAlwaysBtn').addEventListener('click', () => openRecorder({ topicId: state.alwaysId }));
   $('importBtn').addEventListener('click', async () => {
     await api.importClips(state.topic.id, t('addFilesTitle'));

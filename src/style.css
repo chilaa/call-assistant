@@ -119,7 +119,27 @@ kbd { font: inherit; font-size: .85em; opacity: .8; white-space: nowrap; }
   background: var(--sheet);
   border-left: 1px solid var(--line);
 }
+.side[hidden] { display: none; }
 .side h2 { font-size: 18px; }
+/* The tab on the right edge that opens and closes the "Always use" panel. */
+.side-toggle {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 6px;
+  writing-mode: vertical-rl;
+  font: 600 14px var(--font);
+  color: var(--ink);
+  background: var(--sheet);
+  border: 0;
+  border-left: 1px solid var(--line);
+  cursor: pointer;
+}
+.side-toggle:hover { background: var(--cobalt-pale); }
+.side-arrow { writing-mode: horizontal-tb; }
+.side-arrow::before { content: "‹"; font-size: 18px; line-height: 1; }
+.side-toggle[aria-expanded="true"] .side-arrow::before { content: "›"; }
 .side-clips { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 10px; }
 .side .record { width: 100%; }
 
@@ -221,6 +241,31 @@ kbd { font: inherit; font-size: .85em; opacity: .8; white-space: nowrap; }
   font-weight: 700;
   line-height: 1.2;
   overflow-wrap: anywhere;
+}
+/* The short description under the name: at most two lines. */
+.clip .note {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: 0 1 auto;
+  min-height: 0;
+  margin-bottom: 3px;
+  font-size: 13px;
+  line-height: 1.2;
+  opacity: .85;
+  overflow-wrap: anywhere;
+}
+.clip.has-note .play { padding-top: 8px; padding-bottom: 8px; }
+.clip.has-note .num { width: 30px; height: 30px; }
+/* With a description the name keeps one full line and the text goes below. */
+.clip.has-note .name {
+  flex: none;
+  display: block;
+  padding: 2px 0;
+  font-size: 18px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .clip .meta { flex: none; display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
 .clip .meta kbd { font-size: 14px; opacity: 1; }
@@ -367,6 +412,19 @@ dialog select, dialog input:not([type]) {
   border: 1px solid var(--line);
   border-radius: 8px;
 }
+dialog textarea {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 10px;
+  font: 400 15px/1.35 var(--font);
+  color: var(--ink);
+  background: var(--sheet);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  resize: vertical;
+}
+dialog .note-field { margin: 0 0 14px; }
 dialog label.check { display: flex; align-items: center; gap: 8px; font-weight: 400; font-size: 15px; }
 .stack { display: grid; gap: 8px; }
 .stack button { text-align: left; }

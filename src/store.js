@@ -126,6 +126,7 @@ function createStore(root) {
     if ('name' in change) clip.name = String(change.name).trim() || 'Clip';
     if ('color' in change) clip.color = change.color || '';
     if ('key' in change) clip.key = change.key || '';
+    if ('note' in change) clip.note = String(change.note || '').trim().slice(0, 200);
     if ('links' in change) {
       const known = new Set(topic.clips.map((c) => c.id));
       clip.links = [...new Set(change.links)].filter((id) => known.has(id) && id !== clipId);
